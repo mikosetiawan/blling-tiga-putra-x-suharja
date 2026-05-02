@@ -66,7 +66,7 @@ class BillingController extends Controller
             'nilai_pending' => (clone $statsBase)->where('status_bayar', 'belum_bayar')->sum('total_bayar'),
         ];
 
-        $pelanggans = auth()->user()->isInternal()
+        $pelanggans = auth()->user()->canManageBillingInvoices()
             ? Pelanggan::whereNotNull('user_id')->orderBy('nama_lengkap')->get()
             : collect();
 

@@ -185,7 +185,7 @@ class PelangganController extends Controller
         $linkedUser = $pelanggan->user;
         $pelanggan->forceFill(['user_id' => null])->saveQuietly();
 
-        if ($linkedUser && $linkedUser->hasRole('pelanggan') && ! $linkedUser->hasAnyRole(['admin', 'teknisi'])) {
+        if ($linkedUser && $linkedUser->hasRole('pelanggan') && ! $linkedUser->isAdmin()) {
             $linkedUser->removeRole('pelanggan');
         }
 

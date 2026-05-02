@@ -15,7 +15,6 @@ class DatabaseSeeder extends Seeder
     {
         // Buat Roles
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $teknisiRole = Role::firstOrCreate(['name' => 'teknisi']);
         $pelangganRole = Role::firstOrCreate(['name' => 'pelanggan']);
 
         // Create admin user
@@ -28,16 +27,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $admin->assignRole($adminRole);
-
-        $teknisi = User::firstOrCreate(
-            ['email' => 'teknisi@3pp.co.id'],
-            [
-                'name' => 'Teknisi Satu',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $teknisi->assignRole($teknisiRole);
 
         // Pelanggan sesuai Laporan Data Pelanggan PDF
         $pelanggans = [

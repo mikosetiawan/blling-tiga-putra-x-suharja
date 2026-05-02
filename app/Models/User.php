@@ -44,20 +44,9 @@ class User extends Authenticatable
         return $this->hasRole('admin');
     }
 
-    public function isTeknisi(): bool
-    {
-        return $this->hasRole('teknisi');
-    }
-
     public function isPelanggan(): bool
     {
         return $this->hasRole('pelanggan');
-    }
-
-    /** Admin atau teknisi (akses modul operasional). */
-    public function isInternal(): bool
-    {
-        return $this->hasAnyRole(['admin', 'teknisi']);
     }
 
     public function canManageUsers(): bool
@@ -76,10 +65,10 @@ class User extends Authenticatable
         return $this->hasRole('admin');
     }
 
-    /** Lihat daftar & detail pelanggan (admin + teknisi). */
+    /** Lihat daftar & detail pelanggan. */
     public function canViewPelanggan(): bool
     {
-        return $this->hasAnyRole(['admin', 'teknisi']);
+        return $this->hasRole('admin');
     }
 
     /** Buat / hapus invoice, filter semua pelanggan. */
