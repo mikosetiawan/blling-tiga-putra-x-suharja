@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Billing;
-use App\Models\Helpdesk;
 use App\Models\Pelanggan;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -74,36 +73,6 @@ class LaporanController extends Controller
         return view('laporan.billing', compact('billings', 'summary'));
     }
 
-    // ===================== LAPORAN HELPDESK =====================
-    public function helpdesk(Request $request)
-    {
-        $query = Helpdesk::with('pelanggan', 'assignedTo')->latest();
-
-        if ($request->status) $query->where('status', $request->status);
-        if ($request->prioritas) $query->where('prioritas', $request->prioritas);
-        if ($request->dari) $query->whereDate('created_at', '>=', $request->dari);
-        if ($request->sampai) $query->whereDate('created_at', '<=', $request->sampai);
-
-        $helpdesks = $query->get();
-
-        $summary = [
-            'total' => $helpdesks->count(),
-            'open' => $helpdesks->where('status', 'open')->count(),
-            'in_progress' => $helpdesks->where('status', 'in_progress')->count(),
-            'resolved' => $helpdesks->where('status', 'resolved')->count(),
-            'closed' => $helpdesks->where('status', 'closed')->count(),
-            'kritis' => $helpdesks->where('prioritas', 'kritis')->count(),
-        ];
-
-        if ($request->export === 'pdf') {
-            $pdf = Pdf::loadView('laporan.pdf.helpdesk', compact('helpdesks', 'summary', 'request'))
-                ->setPaper('a4', 'landscape');
-            return $pdf->download('laporan-helpdesk-' . date('Ymd') . '.pdf');
-        }
-
-        return view('laporan.helpdesk', compact('helpdesks', 'summary'));
-    }
-
     // ===================== DASHBOARD STATISTIK =====================
     public function dashboard(Request $request)
     {
@@ -115,7 +84,9 @@ class LaporanController extends Controller
             'pendapatan_bulan' => Billing::where('status_bayar', 'lunas')
                 ->where('periode', 'like', '%'.date('Y').'%')
                 ->sum('total_bayar'),
-            'tiket_open' => Helpdesk::where('status', 'open')->count(),
+            'invoice_lunas_tahun' => Billing::where('status_bayar', 'lunas')
+                ->whereYear('tanggal_bayar', now()->year)
+                ->count(),
             'tagihan_belum_bayar' => Billing::where('status_bayar', 'belum_bayar')->count(),
         ];
 

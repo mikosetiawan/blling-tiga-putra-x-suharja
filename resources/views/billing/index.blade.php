@@ -2,25 +2,21 @@
 @section('title', 'Tagihan & Invoice')
 
 @section('topbar-actions')
+    @if(auth()->user()->canManageBillingInvoices())
     <a href="{{ route('billing.create') }}" class="btn btn-primary">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Buat Invoice
     </a>
+    @endif
 @endsection
 
 @section('content')
 {{-- Summary Stats --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-    @php
-    $totalSemua = \App\Models\Billing::count();
-    $totalLunas = \App\Models\Billing::where('status_bayar','lunas')->count();
-    $totalBelum = \App\Models\Billing::where('status_bayar','belum_bayar')->count();
-    $nilaiPending = \App\Models\Billing::where('status_bayar','belum_bayar')->sum('total_bayar');
-    @endphp
-    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Total Invoice</div><div class="text-2xl font-800 text-white">{{ $totalSemua }}</div></div>
-    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Lunas</div><div class="text-2xl font-800 text-emerald-400">{{ $totalLunas }}</div></div>
-    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Belum Bayar</div><div class="text-2xl font-800 text-red-400">{{ $totalBelum }}</div></div>
-    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Nilai Pending</div><div class="text-xl font-800 text-amber-400">Rp {{ number_format($nilaiPending,0,',','.') }}</div></div>
+    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Total Invoice</div><div class="text-2xl font-800 text-white">{{ $billingStats['total'] }}</div></div>
+    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Lunas</div><div class="text-2xl font-800 text-emerald-400">{{ $billingStats['lunas'] }}</div></div>
+    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Belum Bayar</div><div class="text-2xl font-800 text-red-400">{{ $billingStats['belum_bayar'] }}</div></div>
+    <div class="stat-card"><div class="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Nilai Pending</div><div class="text-xl font-800 text-amber-400">Rp {{ number_format($billingStats['nilai_pending'],0,',','.') }}</div></div>
 </div>
 
 {{-- Filter --}}
@@ -39,6 +35,7 @@
             <label class="form-label">Periode</label>
             <input type="text" name="periode" value="{{ request('periode') }}" class="form-input" placeholder="Cth: April 2026">
         </div>
+        @if($pelanggans->isNotEmpty())
         <div class="w-48">
             <label class="form-label">Pelanggan</label>
             <select name="pelanggan_id" class="form-select">
@@ -50,6 +47,7 @@
                 @endforeach
             </select>
         </div>
+        @endif
         <button type="submit" class="btn btn-primary">
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             Filter
@@ -113,7 +111,7 @@
                     <td>
                         <div class="flex items-center justify-center gap-2">
                             <a href="{{ route('billing.show', $b) }}" class="btn btn-secondary btn-sm">Detail</a>
-                            @if($b->status_bayar === 'belum_bayar')
+                            @if($b->status_bayar === 'belum_bayar' && auth()->user()->canManageBillingInvoices())
                             <form method="POST" action="{{ route('billing.destroy', $b) }}" onsubmit="return confirm('Hapus invoice ini?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>

@@ -33,11 +33,6 @@ class User extends Authenticatable
         return $this->hasMany(Billing::class, 'verified_by');
     }
 
-    public function helpdesksAssigned()
-    {
-        return $this->hasMany(Helpdesk::class, 'assigned_to');
-    }
-
     // ── Helper ──────────────────────────────────────────────
     public function isAdmin(): bool
     {
@@ -47,6 +42,45 @@ class User extends Authenticatable
     public function isTeknisi(): bool
     {
         return $this->hasRole('teknisi');
+    }
+
+    public function isPelanggan(): bool
+    {
+        return $this->hasRole('pelanggan');
+    }
+
+    /** Admin atau teknisi (akses modul operasional). */
+    public function isInternal(): bool
+    {
+        return $this->hasAnyRole(['admin', 'teknisi']);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function canViewReports(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /** CRUD data pelanggan (tambah / edit / hapus). */
+    public function canManagePelangganData(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /** Lihat daftar & detail pelanggan (admin + teknisi). */
+    public function canViewPelanggan(): bool
+    {
+        return $this->hasAnyRole(['admin', 'teknisi']);
+    }
+
+    /** Buat / hapus invoice, filter semua pelanggan. */
+    public function canManageBillingInvoices(): bool
+    {
+        return $this->hasRole('admin');
     }
 
     public function getAvatarInitialAttribute(): string

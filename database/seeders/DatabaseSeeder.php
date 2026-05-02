@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Billing;
-use App\Models\Helpdesk;
 use App\Models\Pelanggan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -134,30 +133,5 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Contoh tiket helpdesk
-        $tickets = [
-            [$createdPelanggans[6], 'gangguan_koneksi', 'tinggi', 'open', 'Koneksi internet terputus sejak pagi, sudah restart router tidak ada perubahan'],
-            [$createdPelanggans[7], 'lambat', 'sedang', 'in_progress', 'Kecepatan internet sangat lambat saat jam kerja, padahal paket 100 Mbps'],
-            [$createdPelanggans[0], 'pertanyaan_billing', 'rendah', 'resolved', 'Pertanyaan mengenai tagihan bulan Maret 2026'],
-            [$createdPelanggans[1], 'upgrade_paket', 'sedang', 'open', 'Ingin upgrade paket ke dedicated yang lebih tinggi'],
-        ];
-
-        foreach ($tickets as $i => [$pelanggan, $kategori, $prioritas, $status, $deskripsi]) {
-            Helpdesk::firstOrCreate(
-                ['no_tiket' => 'TKT/2026/04/' . str_pad($i + 1, 4, '0', STR_PAD_LEFT)],
-                [
-                    'pelanggan_id' => $pelanggan->id,
-                    'pelapor' => $pelanggan->nama_lengkap,
-                    'no_telepon_pelapor' => $pelanggan->no_telepon,
-                    'kategori' => $kategori,
-                    'prioritas' => $prioritas,
-                    'status' => $status,
-                    'deskripsi' => $deskripsi,
-                    'solusi' => $status === 'resolved' ? 'Sudah dijelaskan melalui telepon, masalah terselesaikan.' : null,
-                    'assigned_to' => $teknisi->id,
-                    'resolved_at' => $status === 'resolved' ? now() : null,
-                ]
-            );
-        }
     }
 }

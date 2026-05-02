@@ -13,7 +13,7 @@
             ['Total Pelanggan','text-white',$stats['total_pelanggan'],'👥'],
             ['Pelanggan Aktif','text-emerald-400',$stats['pelanggan_aktif'],'✅'],
             ['Pendapatan Tahun Ini','text-blue-400','Rp '.number_format($stats['pendapatan_bulan'],0,',','.'),'💰'],
-            ['Tiket Open','text-indigo-400',$stats['tiket_open'],'🎧'],
+            ['Invoice Lunas (Tahun Ini)','text-indigo-400',$stats['invoice_lunas_tahun'],'✓'],
             ['Invoice Pending','text-amber-400',$stats['tagihan_belum_bayar'],'📄'],
         ]; @endphp
         @foreach($kpis as [$label,$color,$val,$icon])
@@ -108,33 +108,6 @@
         </div>
     </div>
 
-    {{-- Helpdesk by Kategori --}}
-    <div class="card">
-        <div class="card-header">
-            <div class="section-title text-[15px]">Tiket Helpdesk by Kategori</div>
-        </div>
-        <div class="p-5">
-            @php
-            $hdByKat = \App\Models\Helpdesk::selectRaw('kategori, count(*) as total')->groupBy('kategori')->orderByDesc('total')->limit(6)->get();
-            $totalHd = $hdByKat->sum('total') ?: 1;
-            $katLabels = ['gangguan_koneksi'=>'Gangguan Koneksi','lambat'=>'Koneksi Lambat','putus_nyambung'=>'Putus Nyambung','tidak_bisa_akses'=>'Tidak Bisa Akses','ganti_password_wifi'=>'Ganti Password WiFi','relokasi'=>'Relokasi','upgrade_paket'=>'Upgrade Paket','downgrade_paket'=>'Downgrade Paket','pertanyaan_billing'=>'Pertanyaan Billing','lainnya'=>'Lainnya'];
-            @endphp
-            @forelse($hdByKat as $h)
-            @php $pctH = round(($h->total / $totalHd) * 100); @endphp
-            <div class="mb-3">
-                <div class="flex justify-between text-[13px] mb-1">
-                    <span class="text-slate-300">{{ $katLabels[$h->kategori] ?? $h->kategori }}</span>
-                    <span class="text-indigo-400 font-600">{{ $h->total }}</span>
-                </div>
-                <div class="h-2 bg-[#161b27] rounded-full overflow-hidden">
-                    <div class="h-full rounded-full bg-indigo-500" style="width:{{ $pctH }}%;"></div>
-                </div>
-            </div>
-            @empty
-            <div class="text-center text-slate-500 py-8">Belum ada tiket</div>
-            @endforelse
-        </div>
-    </div>
 </div>
 
 {{-- Footer Info --}}

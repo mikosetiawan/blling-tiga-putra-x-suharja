@@ -6,7 +6,7 @@
         Data pelanggan tidak ditemukan untuk email ini. Silakan hubungi admin.
     </div>
 @else
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="stat-card">
             <div class="text-[13px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tagihan Belum Dibayar</div>
             <div class="text-[32px] font-bold text-white">{{ $stats['tagihan_belum_bayar'] }}</div>
@@ -15,13 +15,9 @@
             <div class="text-[13px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Tagihan</div>
             <div class="text-[32px] font-bold text-white">{{ $stats['total_tagihan'] }}</div>
         </div>
-        <div class="stat-card">
-            <div class="text-[13px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tiket Bantuan Aktif</div>
-            <div class="text-[32px] font-bold text-white">{{ $stats['tiket_open'] }}</div>
-        </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6">
         <!-- Tagihan Terbaru -->
         <div class="card">
             <div class="card-header flex justify-between items-center">
@@ -52,41 +48,6 @@
                         @empty
                         <tr>
                             <td colspan="4" class="text-center py-6 text-slate-500">Belum ada tagihan.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Tiket Bantuan -->
-        <div class="card">
-            <div class="card-header flex justify-between items-center">
-                <div>
-                    <h2 class="section-title">Tiket Bantuan</h2>
-                    <div class="section-sub">5 tiket bantuan terakhir Anda</div>
-                </div>
-                <a href="{{ route('helpdesk.index') }}" class="text-xs text-blue-500 hover:text-blue-400 font-medium">Lihat Semua</a>
-            </div>
-            <div class="table-wrapper">
-                <table class="tbl">
-                    <thead>
-                        <tr>
-                            <th>No. Tiket</th>
-                            <th>Kategori</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentHelpdesks as $h)
-                        <tr>
-                            <td class="font-medium text-white">{{ $h->no_tiket }}</td>
-                            <td>{{ ucwords(str_replace('_', ' ', $h->kategori)) }}</td>
-                            <td>{!! $h->status_badge !!}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="3" class="text-center py-6 text-slate-500">Belum ada tiket bantuan.</td>
                         </tr>
                         @endforelse
                     </tbody>

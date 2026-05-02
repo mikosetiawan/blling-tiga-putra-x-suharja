@@ -178,8 +178,15 @@
 
     {{-- Sidebar Actions --}}
     <div class="space-y-4">
+        @php
+            $isOwnInvoice = $billing->pelanggan && $billing->pelanggan->email === auth()->user()->email;
+            $canUploadBukti = $billing->status_bayar !== 'lunas' && (
+                (auth()->user()->isPelanggan() && $isOwnInvoice)
+                || auth()->user()->canManageBillingInvoices()
+            );
+        @endphp
         {{-- Upload Bukti --}}
-        @if($billing->status_bayar !== 'lunas')
+        @if($canUploadBukti)
         <div class="card">
             <div class="card-header">
                 <div class="text-[14px] font-700 text-slate-300">📎 Upload Bukti Pembayaran</div>
@@ -220,6 +227,15 @@
                 </button>
             </form>
         </div>
+        @elseif($billing->status_bayar !== 'lunas')
+        <div class="card">
+            <div class="card-header">
+                <div class="text-[14px] font-700 text-slate-300">📎 Pembayaran</div>
+            </div>
+            <div class="p-4 text-[13px] text-slate-400">
+                Invoice belum lunas. Konfirmasi pembayaran dengan bukti dapat dilakukan oleh pelanggan terkait atau admin.
+            </div>
+        </div>
         @else
         {{-- Bukti sudah ada --}}
         <div class="card">
@@ -245,9 +261,15 @@
         <div class="card">
             <div class="card-header"><div class="text-[14px] font-700 text-slate-300">👤 Info Pelanggan</div></div>
             <div class="p-4 space-y-2">
+                @if(auth()->user()->canViewPelanggan())
                 <a href="{{ route('pelanggan.show', $billing->pelanggan) }}" class="font-600 text-blue-400 hover:underline text-[14px]">
                     {{ $billing->pelanggan->nama_perusahaan ?: $billing->pelanggan->nama_lengkap }}
                 </a>
+                @else
+                <span class="font-600 text-slate-200 text-[14px]">
+                    {{ $billing->pelanggan->nama_perusahaan ?: $billing->pelanggan->nama_lengkap }}
+                </span>
+                @endif
                 <div class="text-[12px] font-mono text-slate-500">{{ $billing->pelanggan->id_pelanggan }}</div>
                 <div class="flex justify-between text-[12px] mt-2"><span class="text-slate-500">Paket</span><span class="text-blue-400">{{ $billing->pelanggan->paket_label }}</span></div>
                 <div class="flex justify-between text-[12px]"><span class="text-slate-500">Harga</span><span class="text-emerald-400">Rp {{ number_format($billing->pelanggan->harga_paket,0,',','.') }}</span></div>

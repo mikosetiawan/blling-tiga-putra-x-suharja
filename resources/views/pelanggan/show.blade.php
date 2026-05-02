@@ -2,14 +2,18 @@
 @section('title', 'Detail Pelanggan — ' . $pelanggan->id_pelanggan)
 
 @section('topbar-actions')
+    @if(auth()->user()->canManagePelangganData())
     <a href="{{ route('pelanggan.edit', $pelanggan) }}" class="btn btn-secondary">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         Edit
     </a>
+    @endif
+    @if(auth()->user()->canManageBillingInvoices())
     <a href="{{ route('billing.create', ['pelanggan_id' => $pelanggan->id]) }}" class="btn btn-primary">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Buat Invoice
     </a>
+    @endif
 @endsection
 
 @section('content')
@@ -130,7 +134,9 @@
 <div class="card mb-5">
     <div class="card-header flex items-center justify-between">
         <div class="text-[15px] font-700 text-slate-200">💰 Riwayat Tagihan</div>
+        @if(auth()->user()->canManageBillingInvoices())
         <a href="{{ route('billing.create', ['pelanggan_id' => $pelanggan->id]) }}" class="btn btn-primary btn-sm">+ Invoice Baru</a>
+        @endif
     </div>
     <div class="table-wrapper">
         <table class="tbl">
@@ -171,43 +177,4 @@
     </div>
 </div>
 
-{{-- Riwayat Helpdesk --}}
-<div class="card">
-    <div class="card-header flex items-center justify-between">
-        <div class="text-[15px] font-700 text-slate-200">🎧 Riwayat Helpdesk</div>
-        <a href="{{ route('helpdesk.create', ['pelanggan_id' => $pelanggan->id]) }}" class="btn btn-secondary btn-sm">+ Tiket Baru</a>
-    </div>
-    <div class="table-wrapper">
-        <table class="tbl">
-            <thead>
-                <tr>
-                    <th>No. Tiket</th>
-                    <th>Kategori</th>
-                    <th>Prioritas</th>
-                    <th>Status</th>
-                    <th>Dibuat</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($pelanggan->helpdesks as $h)
-                <tr>
-                    <td class="font-mono text-[12px] text-purple-400">{{ $h->no_tiket }}</td>
-                    <td class="text-slate-400">{{ $h->kategori_label }}</td>
-                    <td><span class="prio-{{ $h->prioritas }} font-600 text-[13px]">{{ ucfirst($h->prioritas) }}</span></td>
-                    <td>
-                        <span class="badge badge-{{ $h->status === 'in_progress' ? 'progress' : $h->status }}">
-                            {{ ucfirst(str_replace('_', ' ', $h->status)) }}
-                        </span>
-                    </td>
-                    <td class="text-slate-400">{{ $h->created_at->format('d/m/Y') }}</td>
-                    <td><a href="{{ route('helpdesk.show', $h) }}" class="btn btn-secondary btn-sm">Detail</a></td>
-                </tr>
-                @empty
-                <tr><td colspan="6" class="text-center text-slate-500 py-8">Belum ada tiket helpdesk</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
 @endsection

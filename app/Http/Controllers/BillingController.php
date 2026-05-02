@@ -9,12 +9,18 @@ use Illuminate\Support\Facades\Storage;
 
 class BillingController extends Controller
 {
+    private function billingBelongsToPelangganUser(Billing $billing): bool
+    {
+        return (bool) $billing->pelanggan
+            && $billing->pelanggan->email
+            && $billing->pelanggan->email === auth()->user()->email;
+    }
+
     public function index(Request $request)
     {
         $query = Billing::with('pelanggan')->latest();
 
-        // Jika user yang login adalah pelanggan, hanya tampilkan tagihannya sendiri
-        if (auth()->user()->hasRole('pelanggan')) {
+        if (auth()->user()->isPelanggan()) {
             $query->whereHas('pelanggan', function ($q) {
                 $q->where('email', auth()->user()->email);
             });
@@ -26,24 +32,34 @@ class BillingController extends Controller
         if ($request->periode) {
             $query->where('periode', 'like', '%'.$request->periode.'%');
         }
-        if ($request->pelanggan_id) {
+        if ($request->pelanggan_id && auth()->user()->canManageBillingInvoices()) {
             $query->where('pelanggan_id', $request->pelanggan_id);
         }
 
         $billings = $query->paginate(15)->withQueryString();
-        
-        // Hanya admin/teknisi yang bisa melihat semua pelanggan untuk filter
-        if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('teknisi') || auth()->user()->email === 'admin@3pp.co.id') {
-            $pelanggans = Pelanggan::orderBy('nama_lengkap')->get();
-        } else {
-            $pelanggans = collect();
-        }
 
-        return view('billing.index', compact('billings', 'pelanggans'));
+        $statsBase = Billing::query();
+        if (auth()->user()->isPelanggan()) {
+            $statsBase->whereHas('pelanggan', fn ($q) => $q->where('email', auth()->user()->email));
+        }
+        $billingStats = [
+            'total' => (clone $statsBase)->count(),
+            'lunas' => (clone $statsBase)->where('status_bayar', 'lunas')->count(),
+            'belum_bayar' => (clone $statsBase)->where('status_bayar', 'belum_bayar')->count(),
+            'nilai_pending' => (clone $statsBase)->where('status_bayar', 'belum_bayar')->sum('total_bayar'),
+        ];
+
+        $pelanggans = auth()->user()->isInternal()
+            ? Pelanggan::orderBy('nama_lengkap')->get()
+            : collect();
+
+        return view('billing.index', compact('billings', 'pelanggans', 'billingStats'));
     }
 
     public function create(Request $request)
     {
+        abort_unless(auth()->user()->canManageBillingInvoices(), 403);
+
         $pelanggans = Pelanggan::where('status', 'aktif')->orderBy('nama_lengkap')->get();
         $selectedPelanggan = $request->pelanggan_id ? Pelanggan::find($request->pelanggan_id) : null;
         $nextInvoice = Billing::generateInvoiceNo();
@@ -52,6 +68,8 @@ class BillingController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()->canManageBillingInvoices(), 403);
+
         $validated = $request->validate([
             'pelanggan_id' => 'required|exists:pelanggans,id',
             'tanggal_invoice' => 'required|date',
@@ -76,11 +94,20 @@ class BillingController extends Controller
     public function show(Billing $billing)
     {
         $billing->load('pelanggan', 'verifiedBy');
+
+        if (auth()->user()->isPelanggan()) {
+            abort_unless($this->billingBelongsToPelangganUser($billing), 403);
+        }
+
         return view('billing.show', compact('billing'));
     }
 
     public function uploadBukti(Request $request, Billing $billing)
     {
+        $canPelanggan = auth()->user()->isPelanggan() && $this->billingBelongsToPelangganUser($billing);
+        $canAdmin = auth()->user()->canManageBillingInvoices();
+        abort_unless($canPelanggan || $canAdmin, 403);
+
         $request->validate([
             'bukti_bayar' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'tanggal_bayar' => 'required|date',
@@ -108,6 +135,8 @@ class BillingController extends Controller
 
     public function destroy(Billing $billing)
     {
+        abort_unless(auth()->user()->canManageBillingInvoices(), 403);
+
         if ($billing->bukti_bayar) {
             Storage::disk('public')->delete($billing->bukti_bayar);
         }

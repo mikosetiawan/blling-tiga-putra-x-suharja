@@ -8,8 +8,20 @@ use Illuminate\Support\Facades\DB;
 
 class PelangganController extends Controller
 {
+    private function authorizePelangganAccess(): void
+    {
+        abort_unless(auth()->user()->canViewPelanggan(), 403);
+    }
+
+    private function authorizePelangganManage(): void
+    {
+        abort_unless(auth()->user()->canManagePelangganData(), 403);
+    }
+
     public function index(Request $request)
     {
+        $this->authorizePelangganAccess();
+
         $query = Pelanggan::query();
 
         if ($request->search) {
@@ -36,12 +48,16 @@ class PelangganController extends Controller
 
     public function create()
     {
+        $this->authorizePelangganManage();
+
         $nextId = Pelanggan::generateId();
         return view('pelanggan.create', compact('nextId'));
     }
 
     public function store(Request $request)
     {
+        $this->authorizePelangganManage();
+
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_perusahaan' => 'nullable|string|max:255',
@@ -80,17 +96,23 @@ class PelangganController extends Controller
 
     public function show(Pelanggan $pelanggan)
     {
-        $pelanggan->load(['billings' => fn($q) => $q->latest(), 'helpdesks' => fn($q) => $q->latest()]);
+        $this->authorizePelangganAccess();
+
+        $pelanggan->load(['billings' => fn ($q) => $q->latest()]);
         return view('pelanggan.show', compact('pelanggan'));
     }
 
     public function edit(Pelanggan $pelanggan)
     {
+        $this->authorizePelangganManage();
+
         return view('pelanggan.edit', compact('pelanggan'));
     }
 
     public function update(Request $request, Pelanggan $pelanggan)
     {
+        $this->authorizePelangganManage();
+
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_perusahaan' => 'nullable|string|max:255',
@@ -126,6 +148,8 @@ class PelangganController extends Controller
 
     public function destroy(Pelanggan $pelanggan)
     {
+        $this->authorizePelangganManage();
+
         $pelanggan->delete();
         return redirect()->route('pelanggan.index')
             ->with('success', 'Pelanggan berhasil dihapus.');

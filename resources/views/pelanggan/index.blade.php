@@ -2,10 +2,12 @@
 @section('title', 'Data Pelanggan')
 
 @section('topbar-actions')
+    @if(auth()->user()->canManagePelangganData())
     <a href="{{ route('pelanggan.create') }}" class="btn btn-primary">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Pelanggan
     </a>
+    @endif
 @endsection
 
 @section('content')
@@ -95,11 +97,13 @@
                     <td>
                         <div class="flex items-center justify-center gap-2">
                             <a href="{{ route('pelanggan.show', $p) }}" class="btn btn-secondary btn-sm">Detail</a>
+                            @if(auth()->user()->canManagePelangganData())
                             <a href="{{ route('pelanggan.edit', $p) }}" class="btn btn-secondary btn-sm">Edit</a>
                             <form method="POST" action="{{ route('pelanggan.destroy', $p) }}" onsubmit="return confirm('Hapus pelanggan ini?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                             </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

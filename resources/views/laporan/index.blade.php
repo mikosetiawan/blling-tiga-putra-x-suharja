@@ -5,7 +5,7 @@
 <div class="section-title mb-1">Laporan & Ekspor Data</div>
 <div class="section-sub mb-6">Pilih jenis laporan yang ingin ditampilkan atau diekspor</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
     {{-- Laporan Pelanggan --}}
     <a href="{{ route('laporan.pelanggan') }}" class="card p-6 hover:border-blue-600 transition-colors group cursor-pointer block">
         <div class="w-12 h-12 rounded-2xl bg-blue-900/40 flex items-center justify-center mb-4 group-hover:bg-blue-900/70 transition-colors">
@@ -38,22 +38,6 @@
         </div>
     </a>
 
-    {{-- Laporan Helpdesk --}}
-    <a href="{{ route('laporan.helpdesk') }}" class="card p-6 hover:border-purple-600 transition-colors group cursor-pointer block">
-        <div class="w-12 h-12 rounded-2xl bg-purple-900/40 flex items-center justify-center mb-4 group-hover:bg-purple-900/70 transition-colors">
-            <svg class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-        </div>
-        <div class="text-[16px] font-700 text-white mb-1">Laporan Helpdesk</div>
-        <div class="text-[13px] text-slate-500 mb-4">Rekap tiket, kategori gangguan, dan waktu penyelesaian</div>
-        <div class="flex gap-2">
-            <span class="badge" style="background:#1e2535;color:#94a3b8;border:1px solid #2a3347;font-size:11px;">Tampil</span>
-            <span class="badge" style="background:#1e2535;color:#94a3b8;border:1px solid #2a3347;font-size:11px;">PDF</span>
-            <span class="badge" style="background:#1e2535;color:#94a3b8;border:1px solid #2a3347;font-size:11px;">Print</span>
-        </div>
-    </a>
-
     {{-- Statistik --}}
     <a href="{{ route('laporan.statistik') }}" class="card p-6 hover:border-amber-600 transition-colors group cursor-pointer block">
         <div class="w-12 h-12 rounded-2xl bg-amber-900/40 flex items-center justify-center mb-4 group-hover:bg-amber-900/70 transition-colors">
@@ -77,13 +61,12 @@ $qStats = [
     'Pelanggan Aktif' => \App\Models\Pelanggan::where('status','aktif')->count(),
     'Invoice Bulan Ini' => \App\Models\Billing::whereMonth('tanggal_invoice', now()->month)->count(),
     'Total Pendapatan' => 'Rp ' . number_format(\App\Models\Billing::where('status_bayar','lunas')->sum('total_bayar'),0,',','.'),
-    'Tiket Open' => \App\Models\Helpdesk::where('status','open')->count(),
-    'Tiket Kritis' => \App\Models\Helpdesk::where('prioritas','kritis')->whereNotIn('status',['closed'])->count(),
+    'Invoice Belum Bayar' => \App\Models\Billing::where('status_bayar','belum_bayar')->count(),
 ];
 @endphp
 <div class="mt-6">
     <div class="text-[13px] font-700 text-slate-500 uppercase tracking-wider mb-3">Ringkasan Saat Ini</div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         @foreach($qStats as $label => $val)
         <div class="card p-4 text-center">
             <div class="text-[11px] text-slate-500 mb-1">{{ $label }}</div>

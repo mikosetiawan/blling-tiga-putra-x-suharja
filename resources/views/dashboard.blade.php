@@ -2,15 +2,17 @@
 @section('title', 'Dashboard')
 
 @section('topbar-actions')
+    @if(auth()->user()->canManagePelangganData())
     <a href="{{ route('pelanggan.create') }}" class="btn btn-primary btn-sm">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Pelanggan
     </a>
+    @endif
 @endsection
 
 @section('content')
 {{-- STAT CARDS --}}
-<div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+<div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
     <div class="stat-card col-span-1" style="--c: #3b82f6;">
         <div class="text-[11px] font-600 text-slate-500 uppercase tracking-wider mb-2">Total Pelanggan</div>
         <div class="text-3xl font-800 text-white">{{ number_format($stats['total_pelanggan']) }}</div>
@@ -27,14 +29,9 @@
         <div class="text-[12px] text-slate-500 mt-1">invoice pending</div>
     </div>
     <div class="stat-card col-span-1">
-        <div class="text-[11px] font-600 text-slate-500 uppercase tracking-wider mb-2">Tiket Open</div>
-        <div class="text-3xl font-800 text-indigo-400">{{ $stats['tiket_open'] }}</div>
-        <div class="text-[12px] text-slate-500 mt-1">helpdesk aktif</div>
-    </div>
-    <div class="stat-card col-span-1">
-        <div class="text-[11px] font-600 text-slate-500 uppercase tracking-wider mb-2">Tiket Kritis</div>
-        <div class="text-3xl font-800 text-red-400">{{ $stats['tiket_kritis'] }}</div>
-        <div class="text-[12px] text-slate-500 mt-1">perlu perhatian</div>
+        <div class="text-[11px] font-600 text-slate-500 uppercase tracking-wider mb-2">Invoice Lunas (Bulan Ini)</div>
+        <div class="text-3xl font-800 text-indigo-400">{{ $stats['invoice_lunas_bulan'] }}</div>
+        <div class="text-[12px] text-slate-500 mt-1">pembayaran terverifikasi</div>
     </div>
     <div class="stat-card col-span-1">
         <div class="text-[11px] font-600 text-slate-500 uppercase tracking-wider mb-2">Distribusi Paket</div>
@@ -47,7 +44,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     {{-- Recent Pelanggan --}}
     <div class="card xl:col-span-1">
         <div class="card-header flex items-center justify-between">
@@ -100,32 +97,5 @@
         </div>
     </div>
 
-    {{-- Recent Helpdesk --}}
-    <div class="card xl:col-span-1">
-        <div class="card-header flex items-center justify-between">
-            <div class="section-title text-[15px]">Tiket Helpdesk</div>
-            <a href="{{ route('helpdesk.index') }}" class="text-[12px] text-blue-400 hover:text-blue-300">Lihat semua →</a>
-        </div>
-        <div class="divide-y divide-[#2a3347]">
-            @forelse($recentHelpdesks as $h)
-            <div class="flex items-center gap-3 p-4 hover:bg-[#1a2030] transition-colors">
-                <div class="flex-1 min-w-0">
-                    <div class="text-[13px] font-600 text-slate-200 truncate">{{ $h->pelanggan->nama_perusahaan ?: $h->pelanggan->nama_lengkap }}</div>
-                    <div class="text-[11px] text-slate-500">{{ $h->kategori_label }}</div>
-                </div>
-                <div class="text-right flex-shrink-0">
-                    <span class="prio-{{ $h->prioritas }} text-[11px] font-600">{{ ucfirst($h->prioritas) }}</span>
-                    <div>
-                        <span class="badge badge-{{ $h->status === 'in_progress' ? 'progress' : $h->status }} text-[10px]">
-                            {{ ucfirst(str_replace('_',' ',$h->status)) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            @empty
-            <div class="p-6 text-center text-slate-500 text-[13px]">Tidak ada tiket aktif</div>
-            @endforelse
-        </div>
-    </div>
 </div>
 @endsection
