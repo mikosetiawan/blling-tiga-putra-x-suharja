@@ -25,10 +25,14 @@
 </div>
 @endif
 
+@if($pelanggans->isEmpty())
+<div class="alert alert-error mb-4">
+    Belum ada pelanggan aktif dengan <strong class="text-slate-300">akun portal</strong> (terhubung ke user). Tambahkan data pelanggan di menu Data Pelanggan dan pilih akun pengguna yang belum punya data pelanggan.
+</div>
+@endif
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    {{-- Form --}}
     <div class="lg:col-span-2 space-y-5">
-        {{-- Info Invoice --}}
         <div class="card">
             <div class="card-header">
                 <div class="text-[15px] font-700 text-slate-200">📄 Informasi Invoice</div>
@@ -53,32 +57,40 @@
             </div>
         </div>
 
-        {{-- Pelanggan --}}
         <div class="card">
             <div class="card-header">
-                <div class="text-[15px] font-700 text-slate-200">👤 Pilih Pelanggan</div>
+                <div class="text-[15px] font-700 text-slate-200">👤 Pelanggan (Data Master + Portal)</div>
             </div>
-            <div class="p-5">
-                <label class="form-label">Pelanggan <span class="text-red-400">*</span></label>
-                <select name="pelanggan_id" class="form-select" id="pelangganSelect" required>
-                    <option value="">-- Pilih Pelanggan --</option>
-                    @foreach($pelanggans as $p)
-                    <option value="{{ $p->id }}"
-                        data-harga="{{ $p->harga_paket }}"
-                        data-paket="{{ $p->paket_label }}"
-                        {{ (old('pelanggan_id', $selectedPelanggan?->id) == $p->id) ? 'selected' : '' }}>
-                        {{ $p->id_pelanggan }} — {{ $p->nama_perusahaan ?: $p->nama_lengkap }}
-                    </option>
-                    @endforeach
-                </select>
-                <div id="pelangganInfo" class="mt-3 p-3 bg-[#161b27] rounded-lg hidden">
-                    <div class="text-[12px] text-slate-400">Paket: <span id="infoPacket" class="text-blue-400 font-600"></span></div>
-                    <div class="text-[12px] text-slate-400 mt-1">Harga: <span id="infoHarga" class="text-emerald-400 font-600"></span></div>
+            <div class="p-5 space-y-3">
+                <p class="text-[12px] text-slate-500 leading-relaxed">
+                    Hanya pelanggan <strong class="text-slate-400">aktif</strong> yang sudah punya <strong class="text-slate-400">akun portal</strong> (user terhubung) dapat ditagih. Akun portal dibuat lewat menu Data Pelanggan.
+                </p>
+                <div>
+                    <label class="form-label">Pelanggan <span class="text-red-400">*</span></label>
+                    <select name="pelanggan_id" class="form-select" id="billingPelangganSelect" required {{ $pelanggans->isEmpty() ? 'disabled' : '' }}>
+                        <option value="">-- Pilih pelanggan --</option>
+                        @foreach($pelanggans as $p)
+                        <option value="{{ $p->id }}"
+                            data-nama="{{ $p->nama_perusahaan ?: $p->nama_lengkap }}"
+                            data-akun="{{ $p->user?->name }} — {{ $p->user?->email }}"
+                            data-harga="{{ $p->harga_paket ?? 0 }}"
+                            data-paket="{{ $p->paket_label }}"
+                            data-idpel="{{ $p->id_pelanggan }}"
+                            {{ (int) old('pelanggan_id', $selectedPelanggan?->id ?? 0) === (int) $p->id ? 'selected' : '' }}>
+                            {{ $p->id_pelanggan }} — {{ $p->nama_perusahaan ?: $p->nama_lengkap }} ({{ $p->user?->email }})
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div id="pelangganInfo" class="mt-1 p-3 bg-[#161b27] rounded-lg hidden">
+                    <div class="text-[12px] text-slate-400">Akun portal: <span id="infoAkun" class="text-slate-200 font-500"></span></div>
+                    <div class="text-[12px] text-slate-400 mt-1">ID Pelanggan: <span id="infoIdPel" class="text-slate-200 font-mono font-600"></span></div>
+                    <div class="text-[12px] text-slate-400 mt-1">Paket: <span id="infoPacket" class="text-blue-400 font-600"></span></div>
+                    <div class="text-[12px] text-slate-400 mt-1">Harga paket: <span id="infoHarga" class="text-emerald-400 font-600"></span></div>
                 </div>
             </div>
         </div>
 
-        {{-- Tagihan --}}
         <div class="card">
             <div class="card-header">
                 <div class="text-[15px] font-700 text-slate-200">💰 Detail Tagihan</div>
@@ -86,7 +98,14 @@
             <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="form-label">Jumlah Tagihan (Rp) <span class="text-red-400">*</span></label>
-                    <input type="number" name="jumlah" id="jumlahInput" value="{{ old('jumlah', $selectedPelanggan?->harga_paket ?? 0) }}" class="form-input" required min="0" step="1000">
+                    @php
+                        $defaultJumlah = old('jumlah');
+                        if ($defaultJumlah === null && $selectedPelanggan) {
+                            $defaultJumlah = $selectedPelanggan->harga_paket ?? 0;
+                        }
+                        $defaultJumlah = $defaultJumlah ?? 0;
+                    @endphp
+                    <input type="number" name="jumlah" id="jumlahInput" value="{{ $defaultJumlah }}" class="form-input" required min="0" step="1000">
                 </div>
                 <div>
                     <label class="form-label">Denda / Biaya Tambahan (Rp)</label>
@@ -100,14 +119,12 @@
         </div>
     </div>
 
-    {{-- Preview Invoice --}}
     <div class="lg:col-span-1">
         <div class="card sticky top-20">
             <div class="card-header">
                 <div class="text-[15px] font-700 text-slate-200">👁 Preview Invoice</div>
             </div>
             <div class="p-5">
-                {{-- Logo header --}}
                 <div class="border border-[#2a3347] rounded-lg p-4 mb-4" style="background:#161b27;">
                     <div class="text-[11px] font-800 text-slate-300 mb-1">PT. TIGA PUTRA PANDAWA</div>
                     <div class="text-[10px] text-slate-500">Jl. KH. Yasin Beiji, Krakatau Junction Ruko No. 21 & 23</div>
@@ -120,7 +137,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Kepada</span>
-                        <span class="text-slate-300" id="previewPelanggan">—</span>
+                        <span class="text-slate-300 text-right max-w-[60%]" id="previewPelanggan">—</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Paket</span>
@@ -156,16 +173,18 @@
 const fmt = n => 'Rp ' + parseInt(n||0).toLocaleString('id-ID');
 
 function updatePreview() {
-    const sel = document.getElementById('pelangganSelect');
+    const sel = document.getElementById('billingPelangganSelect');
     const opt = sel.options[sel.selectedIndex];
     const jumlah = parseFloat(document.getElementById('jumlahInput').value) || 0;
     const denda = parseFloat(document.getElementById('dendaInput').value) || 0;
 
     if (sel.value) {
+        document.getElementById('infoAkun').textContent = opt.dataset.akun || '—';
+        document.getElementById('infoIdPel').textContent = opt.dataset.idpel || '—';
         document.getElementById('infoPacket').textContent = opt.dataset.paket;
         document.getElementById('infoHarga').textContent = fmt(opt.dataset.harga);
         document.getElementById('pelangganInfo').classList.remove('hidden');
-        document.getElementById('previewPelanggan').textContent = opt.text.split('—')[1]?.trim() || '';
+        document.getElementById('previewPelanggan').textContent = opt.dataset.nama || '';
         document.getElementById('previewPaket').textContent = opt.dataset.paket;
     } else {
         document.getElementById('pelangganInfo').classList.add('hidden');
@@ -178,9 +197,11 @@ function updatePreview() {
     document.getElementById('previewTotal').textContent = fmt(jumlah + denda);
 }
 
-document.getElementById('pelangganSelect').addEventListener('change', function() {
+document.getElementById('billingPelangganSelect').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
-    if (opt.dataset.harga) document.getElementById('jumlahInput').value = opt.dataset.harga;
+    if (opt.value && opt.dataset.harga !== undefined) {
+        document.getElementById('jumlahInput').value = opt.dataset.harga;
+    }
     updatePreview();
 });
 document.getElementById('jumlahInput').addEventListener('input', updatePreview);

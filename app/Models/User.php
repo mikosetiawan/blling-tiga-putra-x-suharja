@@ -28,6 +28,11 @@ class User extends Authenticatable
     ];
 
     // ── Relasi ──────────────────────────────────────────────
+    public function pelanggan()
+    {
+        return $this->hasOne(Pelanggan::class);
+    }
+
     public function bilingsVerified()
     {
         return $this->hasMany(Billing::class, 'verified_by');

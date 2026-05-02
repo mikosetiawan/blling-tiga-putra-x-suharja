@@ -11,8 +11,15 @@ class BillingController extends Controller
 {
     private function billingBelongsToPelangganUser(Billing $billing): bool
     {
-        return (bool) $billing->pelanggan
-            && $billing->pelanggan->email
+        if (! $billing->pelanggan) {
+            return false;
+        }
+
+        if ($billing->pelanggan->user_id) {
+            return (int) $billing->pelanggan->user_id === (int) auth()->id();
+        }
+
+        return (bool) $billing->pelanggan->email
             && $billing->pelanggan->email === auth()->user()->email;
     }
 
@@ -22,7 +29,11 @@ class BillingController extends Controller
 
         if (auth()->user()->isPelanggan()) {
             $query->whereHas('pelanggan', function ($q) {
-                $q->where('email', auth()->user()->email);
+                $q->where('user_id', auth()->id())
+                    ->orWhere(function ($q2) {
+                        $q2->whereNull('user_id')
+                            ->where('pelanggans.email', auth()->user()->email);
+                    });
             });
         }
 
@@ -40,7 +51,13 @@ class BillingController extends Controller
 
         $statsBase = Billing::query();
         if (auth()->user()->isPelanggan()) {
-            $statsBase->whereHas('pelanggan', fn ($q) => $q->where('email', auth()->user()->email));
+            $statsBase->whereHas('pelanggan', function ($q) {
+                $q->where('user_id', auth()->id())
+                    ->orWhere(function ($q2) {
+                        $q2->whereNull('user_id')
+                            ->where('pelanggans.email', auth()->user()->email);
+                    });
+            });
         }
         $billingStats = [
             'total' => (clone $statsBase)->count(),
@@ -50,7 +67,7 @@ class BillingController extends Controller
         ];
 
         $pelanggans = auth()->user()->isInternal()
-            ? Pelanggan::orderBy('nama_lengkap')->get()
+            ? Pelanggan::whereNotNull('user_id')->orderBy('nama_lengkap')->get()
             : collect();
 
         return view('billing.index', compact('billings', 'pelanggans', 'billingStats'));
@@ -60,9 +77,19 @@ class BillingController extends Controller
     {
         abort_unless(auth()->user()->canManageBillingInvoices(), 403);
 
-        $pelanggans = Pelanggan::where('status', 'aktif')->orderBy('nama_lengkap')->get();
+        $pelanggans = Pelanggan::where('status', 'aktif')
+            ->whereNotNull('user_id')
+            ->with('user')
+            ->orderBy('nama_lengkap')
+            ->get();
+
         $selectedPelanggan = $request->pelanggan_id ? Pelanggan::find($request->pelanggan_id) : null;
+        if ($selectedPelanggan && ! $selectedPelanggan->user_id) {
+            $selectedPelanggan = null;
+        }
+
         $nextInvoice = Billing::generateInvoiceNo();
+
         return view('billing.create', compact('pelanggans', 'selectedPelanggan', 'nextInvoice'));
     }
 
@@ -79,6 +106,13 @@ class BillingController extends Controller
             'keterangan' => 'nullable|string',
             'periode' => 'required|string',
         ]);
+
+        $pelanggan = Pelanggan::whereKey($validated['pelanggan_id'])->whereNotNull('user_id')->first();
+        if (! $pelanggan) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['pelanggan_id' => 'Pelanggan harus memiliki akun portal (terhubung ke user).']);
+        }
 
         $validated['no_invoice'] = Billing::generateInvoiceNo();
         $validated['denda'] = $validated['denda'] ?? 0;

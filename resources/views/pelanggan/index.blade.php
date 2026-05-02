@@ -63,6 +63,7 @@
                 <tr>
                     <th>ID Pelanggan</th>
                     <th>Nama / Perusahaan</th>
+                    <th>Akun portal</th>
                     <th>No. Telepon</th>
                     <th>Paket</th>
                     <th>Tgl. Daftar</th>
@@ -81,6 +82,14 @@
                         <div class="font-600 text-slate-200">{{ $p->nama_perusahaan ?: $p->nama_lengkap }}</div>
                         @if($p->nama_perusahaan)
                         <div class="text-[12px] text-slate-500">{{ $p->nama_lengkap }}</div>
+                        @endif
+                    </td>
+                    <td class="text-[12px]">
+                        @if($p->user)
+                            <div class="text-slate-200 font-500">{{ $p->user->name }}</div>
+                            <div class="text-slate-500 font-mono">{{ $p->user->email }}</div>
+                        @else
+                            <span class="text-amber-500/90">Belum terhubung</span>
                         @endif
                     </td>
                     <td class="text-slate-400">{{ $p->no_telepon }}</td>
@@ -109,7 +118,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="text-center py-10 text-slate-500">
+                    <td colspan="9" class="text-center py-10 text-slate-500">
                         Belum ada data pelanggan
                     </td>
                 </tr>

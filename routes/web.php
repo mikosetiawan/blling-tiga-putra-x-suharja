@@ -21,12 +21,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('pelanggan', PelangganController::class);
 
-    Route::resource('billing', BillingController::class)->only(['index', 'show']);
+    // billing/create harus didaftarkan sebelum resource `billing/{billing}`,
+    // kalau tidak, path /billing/create dianggap {billing}=create → 404.
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/billing/create', [BillingController::class, 'create'])->name('billing.create');
         Route::post('/billing', [BillingController::class, 'store'])->name('billing.store');
         Route::delete('/billing/{billing}', [BillingController::class, 'destroy'])->name('billing.destroy');
     });
+    Route::resource('billing', BillingController::class)->only(['index', 'show']);
     Route::post('/billing/{billing}/upload-bukti', [BillingController::class, 'uploadBukti'])->name('billing.upload-bukti');
 
     Route::middleware(['role:admin'])->group(function () {

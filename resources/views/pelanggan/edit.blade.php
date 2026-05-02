@@ -28,6 +28,14 @@
 </div>
 @endif
 
+@if($pelanggan->user)
+<div class="card mb-5 p-4 border border-sky-900/40">
+    <div class="text-[12px] font-700 text-sky-300 uppercase tracking-wide mb-2">Akun portal terhubung</div>
+    <div class="text-[13px] text-slate-300">{{ $pelanggan->user->name }} <span class="text-slate-500">—</span> <span class="font-mono text-slate-400">{{ $pelanggan->user->email }}</span></div>
+    <p class="text-[11px] text-slate-500 mt-2">Email di bawah disinkronkan ke akun login saat Anda menyimpan.</p>
+</div>
+@endif
+
 {{-- Status --}}
 <div class="card mb-5 p-4">
     <div class="flex items-center gap-6">
@@ -85,8 +93,8 @@
             <input type="text" name="no_whatsapp" value="{{ old('no_whatsapp', $pelanggan->no_whatsapp) }}" class="form-input">
         </div>
         <div>
-            <label class="form-label">Email</label>
-            <input type="email" name="email" value="{{ old('email', $pelanggan->email) }}" class="form-input">
+            <label class="form-label">Email <span class="text-slate-500">(akun portal)</span></label>
+            <input type="email" name="email" value="{{ old('email', $pelanggan->email) }}" class="form-input" @if($pelanggan->user) required @endif>
         </div>
     </div>
 </div>

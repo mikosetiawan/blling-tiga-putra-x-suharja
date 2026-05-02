@@ -11,7 +11,8 @@ class DashboardController extends Controller
     public function index()
     {
         if (auth()->user()->hasRole('pelanggan')) {
-            $myPelanggan = Pelanggan::where('email', auth()->user()->email)->first();
+            $myPelanggan = Pelanggan::where('user_id', auth()->id())->first()
+                ?? Pelanggan::whereNull('user_id')->where('email', auth()->user()->email)->first();
             
             if ($myPelanggan) {
                 $stats = [

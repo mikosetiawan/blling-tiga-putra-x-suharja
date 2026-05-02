@@ -8,7 +8,7 @@
         Edit
     </a>
     @endif
-    @if(auth()->user()->canManageBillingInvoices())
+    @if(auth()->user()->canManageBillingInvoices() && $pelanggan->user_id)
     <a href="{{ route('billing.create', ['pelanggan_id' => $pelanggan->id]) }}" class="btn btn-primary">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Buat Invoice
@@ -20,6 +20,20 @@
 <div class="mb-5">
     <a href="{{ route('pelanggan.index') }}" class="text-[13px] text-slate-500 hover:text-slate-300">← Kembali ke Daftar Pelanggan</a>
 </div>
+
+@if($pelanggan->user)
+<div class="card mb-5 p-4 border border-sky-900/50 bg-sky-950/20">
+    <div class="text-[12px] font-700 text-sky-300 uppercase tracking-wide mb-2">Akun portal (login &amp; tagihan)</div>
+    <div class="flex flex-wrap items-center gap-4 text-[13px]">
+        <span class="text-slate-200 font-600">{{ $pelanggan->user->name }}</span>
+        <span class="text-slate-400 font-mono">{{ $pelanggan->user->email }}</span>
+    </div>
+</div>
+@else
+<div class="alert alert-error mb-5">
+    Belum ada akun portal yang terhubung. Tagihan hanya dapat dibuat setelah pelanggan dihubungkan ke user di form Data Pelanggan (data lama perlu diperbaiki oleh admin).
+</div>
+@endif
 
 {{-- Header Card --}}
 <div class="card mb-5 p-5">

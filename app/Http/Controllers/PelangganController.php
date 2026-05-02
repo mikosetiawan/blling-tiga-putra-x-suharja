@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pelanggan;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PelangganController extends Controller
 {
@@ -41,7 +42,7 @@ class PelangganController extends Controller
             $query->where('paket', $request->paket);
         }
 
-        $pelanggans = $query->latest()->paginate(15)->withQueryString();
+        $pelanggans = $query->with('user')->latest()->paginate(15)->withQueryString();
 
         return view('pelanggan.index', compact('pelanggans'));
     }
@@ -51,7 +52,9 @@ class PelangganController extends Controller
         $this->authorizePelangganManage();
 
         $nextId = Pelanggan::generateId();
-        return view('pelanggan.create', compact('nextId'));
+        $eligibleUsers = User::whereDoesntHave('pelanggan')->orderBy('name')->get();
+
+        return view('pelanggan.create', compact('nextId', 'eligibleUsers'));
     }
 
     public function store(Request $request)
@@ -59,13 +62,13 @@ class PelangganController extends Controller
         $this->authorizePelangganManage();
 
         $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
             'nama_lengkap' => 'required|string|max:255',
             'nama_perusahaan' => 'nullable|string|max:255',
             'no_ktp_nib' => 'nullable|string|max:50',
             'npwp' => 'nullable|string|max:30',
             'no_telepon' => 'required|string|max:20',
             'no_whatsapp' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
             'alamat_lengkap' => 'required|string',
             'rt' => 'nullable|string|max:5',
             'rw' => 'nullable|string|max:5',
@@ -85,10 +88,25 @@ class PelangganController extends Controller
             'tanggal_daftar' => 'required|date',
         ]);
 
+        $user = User::findOrFail($validated['user_id']);
+        if ($user->pelanggan()->exists()) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['user_id' => 'Akun ini sudah terhubung ke data pelanggan lain.']);
+        }
+
         $validated['id_pelanggan'] = Pelanggan::generateId();
         $validated['status'] = 'aktif';
+        $validated['email'] = $user->email;
+
+        unset($validated['user_id']);
+        $validated['user_id'] = $user->id;
 
         $pelanggan = Pelanggan::create($validated);
+
+        if (! $user->hasRole('pelanggan')) {
+            $user->assignRole('pelanggan');
+        }
 
         return redirect()->route('pelanggan.show', $pelanggan)
             ->with('success', "Pelanggan {$pelanggan->id_pelanggan} berhasil ditambahkan.");
@@ -98,13 +116,15 @@ class PelangganController extends Controller
     {
         $this->authorizePelangganAccess();
 
-        $pelanggan->load(['billings' => fn ($q) => $q->latest()]);
+        $pelanggan->load(['billings' => fn ($q) => $q->latest(), 'user']);
         return view('pelanggan.show', compact('pelanggan'));
     }
 
     public function edit(Pelanggan $pelanggan)
     {
         $this->authorizePelangganManage();
+
+        $pelanggan->load('user');
 
         return view('pelanggan.edit', compact('pelanggan'));
     }
@@ -113,6 +133,11 @@ class PelangganController extends Controller
     {
         $this->authorizePelangganManage();
 
+        $emailRules = ['required', 'email', 'max:255'];
+        if ($pelanggan->user_id) {
+            $emailRules[] = Rule::unique('users', 'email')->ignore($pelanggan->user_id);
+        }
+
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_perusahaan' => 'nullable|string|max:255',
@@ -120,7 +145,7 @@ class PelangganController extends Controller
             'npwp' => 'nullable|string|max:30',
             'no_telepon' => 'required|string|max:20',
             'no_whatsapp' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
+            'email' => $emailRules,
             'alamat_lengkap' => 'required|string',
             'rt' => 'nullable|string|max:5',
             'rw' => 'nullable|string|max:5',
@@ -142,6 +167,13 @@ class PelangganController extends Controller
 
         $pelanggan->update($validated);
 
+        if ($pelanggan->user_id && $pelanggan->user) {
+            $pelanggan->user->update([
+                'name' => $validated['nama_lengkap'],
+                'email' => $validated['email'],
+            ]);
+        }
+
         return redirect()->route('pelanggan.show', $pelanggan)
             ->with('success', 'Data pelanggan berhasil diperbarui.');
     }
@@ -149,6 +181,13 @@ class PelangganController extends Controller
     public function destroy(Pelanggan $pelanggan)
     {
         $this->authorizePelangganManage();
+
+        $linkedUser = $pelanggan->user;
+        $pelanggan->forceFill(['user_id' => null])->saveQuietly();
+
+        if ($linkedUser && $linkedUser->hasRole('pelanggan') && ! $linkedUser->hasAnyRole(['admin', 'teknisi'])) {
+            $linkedUser->removeRole('pelanggan');
+        }
 
         $pelanggan->delete();
         return redirect()->route('pelanggan.index')

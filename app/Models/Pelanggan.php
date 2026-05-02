@@ -11,6 +11,7 @@ class Pelanggan extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'id_pelanggan', 'nama_lengkap', 'nama_perusahaan', 'no_ktp_nib', 'npwp',
         'no_telepon', 'no_whatsapp', 'email',
         'alamat_lengkap', 'rt', 'rw', 'kelurahan', 'kecamatan', 'kota', 'provinsi', 'kode_pos', 'patokan',
@@ -24,6 +25,11 @@ class Pelanggan extends Model
         'tanggal_daftar' => 'date',
         'harga_paket' => 'decimal:2',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function billings()
     {

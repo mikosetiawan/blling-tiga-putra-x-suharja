@@ -31,6 +31,41 @@
 </div>
 @endif
 
+{{-- 0. Akun portal (wajib) --}}
+<div class="card mb-5 border border-blue-900/40">
+    <div class="card-header">
+        <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-lg bg-sky-600 flex items-center justify-center text-[11px] font-bold text-white">0</div>
+            <div class="section-title text-[15px]">Akun Portal (Login Pelanggan)</div>
+        </div>
+    </div>
+    <div class="p-5 space-y-3">
+        <p class="text-[12px] text-slate-500 leading-relaxed">
+            Setiap pelanggan harus terhubung ke satu akun pengguna agar bisa masuk ke dashboard dan melihat tagihan. Pilih user dari Manajemen User yang <strong class="text-slate-400">belum</strong> punya data pelanggan. Role <strong class="text-slate-400">pelanggan</strong> akan diberikan otomatis jika belum ada.
+        </p>
+        @if($eligibleUsers->isEmpty())
+        <div class="alert alert-error">
+            Tidak ada akun tersedia. Buat pengguna baru di Manajemen User, lalu kembali ke halaman ini.
+        </div>
+        @else
+        <div>
+            <label class="form-label">Hubungkan ke akun user <span class="text-red-400">*</span></label>
+            <select name="user_id" id="pelangganUserSelect" class="form-select" required>
+                <option value="">-- Pilih akun --</option>
+                @foreach($eligibleUsers as $u)
+                <option value="{{ $u->id }}" data-email="{{ $u->email }}" {{ (int) old('user_id', 0) === (int) $u->id ? 'selected' : '' }}>
+                    {{ $u->name }} — {{ $u->email }}
+                </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="text-[12px] text-slate-500">
+            Email tagihan / portal mengikuti akun: <span id="portalEmailPreview" class="text-slate-300 font-mono">—</span>
+        </div>
+        @endif
+    </div>
+</div>
+
 {{-- A. DATA PRIBADI PELANGGAN --}}
 <div class="card mb-5">
     <div class="card-header">
@@ -71,10 +106,6 @@
         <div>
             <label class="form-label">No. WhatsApp <span class="text-slate-500">(jika berbeda)</span></label>
             <input type="text" name="no_whatsapp" value="{{ old('no_whatsapp') }}" class="form-input" placeholder="08xx-xxxx-xxxx">
-        </div>
-        <div>
-            <label class="form-label">Email</label>
-            <input type="email" name="email" value="{{ old('email') }}" class="form-input" placeholder="contoh@email.com">
         </div>
     </div>
 </div>
@@ -228,11 +259,26 @@
 
 <div class="flex justify-end gap-3">
     <a href="{{ route('pelanggan.index') }}" class="btn btn-secondary">Batal</a>
-    <button type="submit" class="btn btn-primary">
+    <button type="submit" class="btn btn-primary" @if($eligibleUsers->isEmpty()) disabled @endif>
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
         Simpan Pelanggan
     </button>
 </div>
 
 </form>
+@push('scripts')
+<script>
+(function() {
+    const sel = document.getElementById('pelangganUserSelect');
+    const prev = document.getElementById('portalEmailPreview');
+    if (!sel || !prev) return;
+    function sync() {
+        const opt = sel.options[sel.selectedIndex];
+        prev.textContent = opt && opt.value ? (opt.dataset.email || '—') : '—';
+    }
+    sel.addEventListener('change', sync);
+    sync();
+})();
+</script>
+@endpush
 @endsection

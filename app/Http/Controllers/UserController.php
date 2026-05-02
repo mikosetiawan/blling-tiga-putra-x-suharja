@@ -57,6 +57,12 @@ class UserController extends Controller
             'roles' => 'required|array',
         ]);
 
+        if ($user->pelanggan()->exists() && ! collect($request->roles)->contains('pelanggan')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Akun ini terhubung ke data pelanggan. Lepaskan di menu Data Pelanggan atau pertahankan role pelanggan.');
+        }
+
         $data = [
             'name' => $request->name,
             'email' => $request->email,
@@ -76,6 +82,10 @@ class UserController extends Controller
     {
         if ($user->id === auth()->id()) {
             return redirect()->route('users.index')->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        if ($user->pelanggan()->exists()) {
+            return redirect()->route('users.index')->with('error', 'Tidak dapat menghapus user yang masih terhubung ke data pelanggan. Hapus data pelanggan terlebih dahulu.');
         }
 
         $user->delete();

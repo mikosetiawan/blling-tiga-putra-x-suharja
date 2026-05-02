@@ -88,6 +88,7 @@ class DatabaseSeeder extends Seeder
                 ]
             );
             $userPelanggan->assignRole($pelangganRole);
+            $p->update(['user_id' => $userPelanggan->id]);
 
             $createdPelanggans[] = $p;
 
